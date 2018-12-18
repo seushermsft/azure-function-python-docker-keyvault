@@ -1,0 +1,42 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: testsecrets
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: testsecrets
+    spec:
+      containers:
+      - name: testsecrets
+        image: cseboulderupskill.azurecr.io/seusherkv:v22
+        volumeMounts:
+        - mountPath: /spn
+          name: service-principal
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: 250m
+          limits:
+            cpu: 500m
+      volumes:
+      - name: service-principal
+        hostPath:
+          path: /etc/kubernetes/azure.json
+          type: File
+      imagePullSecrets:
+      - name: $KUBERNETES_SECRET_NAME
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: testsecrets
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+  selector:
+    app: testsecrets
