@@ -11,10 +11,13 @@ spec:
     spec:
       containers:
       - name: testsecrets
-        image: cseboulderupskill.azurecr.io/seusherkv:v22
+        image: cseboulderupskill.azurecr.io/seusherkv:v28
         volumeMounts:
-        - mountPath: /spn
-          name: service-principal
+        - name: service-principal
+          mountPath: /spn
+        - name: kvvolume
+          mountPath: /kv
+          readOnly: true
         ports:
         - containerPort: 80
         resources:
@@ -27,6 +30,21 @@ spec:
         hostPath:
           path: /etc/kubernetes/azure.json
           type: File
+      - name: kvvolume
+        flexVolume:
+          driver: "azure/kv"
+          secretRef:
+            # if not using aad-pod-identity, you need to create this cred in KV and create a secret (with no content) in k8s:
+            # kubectl create secret generic kvcreds --from-literal clientid= --from-literal clientsecret= --type=azure/kv
+            name: kvcreds
+          options:
+            usepodidentity: "false"
+            keyvaultname: "cseboulder"
+            keyvaultobjectnames: "seushertest"
+            keyvaultobjecttypes: "secret"
+            resourcegroup: "seusher_boulder_upskill"
+            subscriptionid: "7060bca0-7a3c-44bd-b54c-4bb1e9facfac"
+            tenantid: "72f988bf-86f1-41af-91ab-2d7cd011db47"
       imagePullSecrets:
       - name: $KUBERNETES_SECRET_NAME
 ---
